@@ -4,11 +4,16 @@ const mode = document.getElementById('mode');
 const template = document.getElementById('template');
 const generateBtn = document.getElementById('generate');
 const generateGreetingBtn = document.getElementById('generateGreeting');
+const greetingTargetSelect = document.getElementById('greetingTarget');
+const customTargetInput = document.getElementById('customTarget');
 const downloadBtn = document.getElementById('download');
 const downloadQRBtn = document.getElementById('downloadQR');
 const qrSizeSelect = document.getElementById('qrSize');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+const qrStatus = document.getElementById('qrStatus');
+const qrPayloadEl = document.getElementById('qrPayload');
+const openPayloadBtn = document.getElementById('openPayload');
 
 function drawCard(text, qrDataUrl, templateName){
   // clear
@@ -129,11 +134,19 @@ async function generate() {
 
   // generate QR as data URL
   try {
+    if (typeof QRCode === 'undefined' || !QRCode.toDataURL) throw new Error('QR library chưa nạp (QRCode undefined)');
     const qrDataUrl = await QRCode.toDataURL(data, {width: 512, margin:1, color:{dark:'#000000', light:'#FFFFFF'}});
     // compose card
     drawCard(t, qrDataUrl, template.value);
+    // update debug UI
+    qrStatus.textContent = '';
+    qrPayloadEl.textContent = data;
+    // if it's a URL, enable open button
+    try { const url = new URL(data); openPayloadBtn.disabled = false; openPayloadBtn.onclick = () => window.open(url.href, '_blank'); } catch(e){ openPayloadBtn.disabled = true; openPayloadBtn.onclick = null; }
   } catch (err) {
     console.error(err);
+    qrStatus.textContent = 'Lỗi tạo QR — kiểm tra kết nối CDN hoặc mở console để xem lỗi.';
+    qrPayloadEl.textContent = data || '';
     alert('Không thể tạo QR: ' + err);
   }
 }
@@ -145,15 +158,32 @@ generateBtn.addEventListener('click', () => {
 
 generateGreetingBtn.addEventListener('click', () => {
   downloadBtn.disabled = true;
-  // build absolute URL to greeting.html based on current location
-  const loc = window.location;
-  const base = loc.origin + loc.pathname.replace(/\/[^\/]*$/, '/');
-  const greetingUrl = base + 'greeting.html';
-  // Set mode to url temporarily for generation
-  QRCode.toDataURL(greetingUrl, {width:512, margin:1}).then(qrDataUrl => {
-    // compose with a predefined greeting text
+  // Decide which URL to use based on greetingTarget
+  let landingUrl = 'https://vietxuan2208.github.io/qr_20-10/landing.html';
+  const target = greetingTargetSelect.value;
+  if (target === 'greeting') landingUrl = 'https://vietxuan2208.github.io/qr_20-10/greeting.html';
+  if (target === 'card') landingUrl = 'https://vietxuan2208.github.io/qr_20-10/card.html';
+  if (target === 'custom') {
+    const c = customTargetInput.value.trim();
+    if (c) landingUrl = c;
+  }
+  if (typeof QRCode === 'undefined' || !QRCode.toDataURL) {
+    qrStatus.textContent = 'QR library chưa nạp. Vui lòng kiểm tra mạng hoặc mở file qua HTTP.';
+    alert('QR library chưa nạp (QRCode undefined) — kiểm tra kết nối CDN hoặc mở console để biết thêm.');
+    return;
+  }
+  QRCode.toDataURL(landingUrl, {width:512, margin:1}).then(qrDataUrl => {
     drawCard('Quét mã để mở thiệp 20/10', qrDataUrl, template.value);
+    qrStatus.textContent = '';
+    qrPayloadEl.textContent = landingUrl;
+    openPayloadBtn.disabled = false;
+    openPayloadBtn.onclick = () => window.open(landingUrl, '_blank');
   }).catch(err => {console.error(err); alert('Không thể tạo QR: '+err)});
+});
+
+// enable custom input when user selects custom
+greetingTargetSelect.addEventListener('change', () => {
+  customTargetInput.disabled = greetingTargetSelect.value !== 'custom';
 });
 
 // Download QR-only at selected resolution
@@ -170,6 +200,7 @@ downloadQRBtn.addEventListener('click', async () => {
   const size = parseInt(qrSizeSelect.value, 10) || 1024;
   downloadQRBtn.disabled = true;
   try {
+    if (typeof QRCode === 'undefined' || !QRCode.toDataURL) throw new Error('QR library chưa nạp (QRCode undefined)');
     const qrDataUrl = await QRCode.toDataURL(data, {width: size, margin:1, color:{dark:'#000000', light:'#FFFFFF'}});
     // trigger download
     const a = document.createElement('a');
