@@ -52,7 +52,7 @@ function drawCard(text, qrDataUrl, templateName){
   ctx.fillStyle = '#2b2b2b';
   ctx.font = 'bold 36px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText('Chúc mừng bé yêu 20/10 ', canvas.width/2, 140);
+  ctx.fillText('Chúc mừng bé yêu 20/10 ❤️ ', canvas.width/2, 140);
 
   // Khung ảnh/text bên trái
   const boxX = 100;
@@ -122,7 +122,7 @@ function drawCard(text, qrDataUrl, templateName){
       ctx.fillStyle = '#111';
       ctx.font = '15px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Quét mã để xem', qrX + qrSize/2, qrY + qrSize + 38);
+      ctx.fillText('Quét mã để xem em', qrX + qrSize/2, qrY + qrSize + 38);
       downloadBtn.disabled = false;
     };
     qrImg.src = qrDataUrl;
