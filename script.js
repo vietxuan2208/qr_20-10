@@ -14,6 +14,8 @@ const ctx = canvas.getContext('2d');
 const qrStatus = document.getElementById('qrStatus');
 const qrPayloadEl = document.getElementById('qrPayload');
 const openPayloadBtn = document.getElementById('openPayload');
+let lastQrDataUrl = null;
+let lastQrPayload = null;
 
 function drawCard(text, qrDataUrl, templateName){
   // clear
@@ -138,6 +140,9 @@ async function generate() {
     const qrDataUrl = await QRCode.toDataURL(data, {width: 512, margin:1, color:{dark:'#000000', light:'#FFFFFF'}});
     // compose card
     drawCard(t, qrDataUrl, template.value);
+  // remember last QR
+  lastQrDataUrl = qrDataUrl;
+  lastQrPayload = data;
     // update debug UI
     qrStatus.textContent = '';
     qrPayloadEl.textContent = data;
@@ -178,6 +183,9 @@ generateGreetingBtn.addEventListener('click', () => {
     qrPayloadEl.textContent = landingUrl;
     openPayloadBtn.disabled = false;
     openPayloadBtn.onclick = () => window.open(landingUrl, '_blank');
+    // remember last QR
+    lastQrDataUrl = qrDataUrl;
+    lastQrPayload = landingUrl;
   }).catch(err => {console.error(err); alert('Không thể tạo QR: '+err)});
 });
 
@@ -188,27 +196,32 @@ greetingTargetSelect.addEventListener('change', () => {
 
 // Download QR-only at selected resolution
 downloadQRBtn.addEventListener('click', async () => {
-  const t = input.value.trim();
-  let data = t;
-  if (mode.value === 'url') {
-    if (!/^https?:\/\//i.test(data)) data = 'https://' + data;
-  }
-  if (!data) {
-    alert('Vui lòng nhập nội dung hoặc URL để tạo QR');
+  // download the last displayed QR so the saved image matches the preview
+  if (!lastQrDataUrl) {
+    alert('Chưa có QR hiển thị để tải. Vui lòng nhấn "Tạo QR" trước.');
     return;
   }
-  const size = parseInt(qrSizeSelect.value, 10) || 1024;
   downloadQRBtn.disabled = true;
   try {
-    if (typeof QRCode === 'undefined' || !QRCode.toDataURL) throw new Error('QR library chưa nạp (QRCode undefined)');
-    const qrDataUrl = await QRCode.toDataURL(data, {width: size, margin:1, color:{dark:'#000000', light:'#FFFFFF'}});
-    // trigger download
-    const a = document.createElement('a');
-    a.href = qrDataUrl;
-    a.download = 'QR-20-10.png';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    // If user selected a larger size, regenerate from last payload to increase resolution
+    const size = parseInt(qrSizeSelect.value, 10) || 1024;
+    if (size > 512 && lastQrPayload) {
+      if (typeof QRCode === 'undefined' || !QRCode.toDataURL) throw new Error('QR library chưa nạp (QRCode undefined)');
+      const large = await QRCode.toDataURL(lastQrPayload, {width: size, margin:1, color:{dark:'#000000', light:'#FFFFFF'}});
+      const a = document.createElement('a');
+      a.href = large;
+      a.download = 'QR-20-10.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } else {
+      const a = document.createElement('a');
+      a.href = lastQrDataUrl;
+      a.download = 'QR-20-10.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   } catch (err) {
     console.error(err);
     alert('Không thể tạo/tải QR: ' + err);
