@@ -18,6 +18,8 @@ let lastQrDataUrl = null;
 let lastQrPayload = null;
 
 function drawCard(text, qrDataUrl, templateName){
+  // xác định có vẽ text không
+  const isUrlMode = mode && mode.value === 'url';
   // clear
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -50,40 +52,103 @@ function drawCard(text, qrDataUrl, templateName){
   ctx.fillStyle = '#2b2b2b';
   ctx.font = 'bold 36px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText('Chúc mừng 20/10', canvas.width/2, 140);
+  ctx.fillText('Chúc mừng bé yêu 20/10 ', canvas.width/2, 140);
 
-  // message box
-  const boxX = 120;
+  // Khung ảnh/text bên trái
+  const boxX = 100;
   const boxY = 180;
-  const boxW = canvas.width - 240 - 260; // reserve right side for QR
-  ctx.fillStyle = 'rgba(255,255,255,0.6)';
-  roundRect(ctx, boxX, boxY, boxW, 420, 12, true, false);
-
-  // draw message text
-  ctx.fillStyle = '#111';
-  ctx.font = '18px Arial';
-  ctx.textAlign = 'left';
-  wrapText(ctx, text, boxX + 20, boxY + 40, boxW - 40, 26);
-
-  // draw QR image on right
-  const qrSize = 320;
-  const qrX = canvas.width - qrSize - 100;
-  const qrY = 220;
-  const img = new Image();
-  img.onload = () => {
-    // white background for QR
-    roundRect(ctx, qrX-12, qrY-12, qrSize+24, qrSize+24, 16, true, false);
-    ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
-
-    // small caption under QR
+  const boxW = 340;
+  const boxH = 420;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.10)';
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  roundRect(ctx, boxX, boxY, boxW, boxH, 28, true, false);
+  ctx.restore();
+  if (!isUrlMode) {
+    // draw message text
     ctx.fillStyle = '#111';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Quét mã để xem', qrX + qrSize/2, qrY + qrSize + 32);
+    ctx.font = '18px Arial';
+    ctx.textAlign = 'left';
+    wrapText(ctx, text, boxX + 28, boxY + 48, boxW - 56, 28);
+    drawQR();
+  } else {
+    // vẽ ảnh custom.jpg vào giữa box, bo tròn, viền trắng, bóng, sau đó vẽ QR
+    const img = new window.Image();
+    img.onload = function() {
+      // Tính toán kích thước vừa khung, giữ tỉ lệ, padding nhỏ
+      let iw = img.width, ih = img.height;
+      let scale = Math.min((boxW-36)/iw, (boxH-36)/ih, 1);
+      let dw = iw * scale, dh = ih * scale;
+      let dx = boxX + (boxW - dw)/2;
+      let dy = boxY + (boxH - dh)/2;
+      ctx.save();
+      ctx.beginPath();
+      roundRect(ctx, dx, dy, dw, dh, 32, true, false);
+      ctx.clip();
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+      // viền trắng nổi bật
+      ctx.save();
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = '#fff';
+      ctx.shadowColor = 'rgba(0,0,0,0.10)';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      roundRect(ctx, dx, dy, dw, dh, 32, false, true);
+      ctx.stroke();
+      ctx.restore();
+      // vẽ QR sau khi ảnh đã load xong
+      drawQR();
+    };
+    img.src = 'custom.jpg';
+  }
 
+  function drawQR() {
+    // QR code bên phải, căn giữa theo chiều dọc card
+    const qrSize = 320;
+    const qrX = canvas.width - qrSize - 120;
+    const qrY = boxY + (boxH - qrSize)/2;
+    const qrImg = new Image();
+    qrImg.onload = () => {
+      // nền trắng, bo góc, bóng nhẹ cho QR
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.13)';
+      ctx.shadowBlur = 16;
+      roundRect(ctx, qrX-16, qrY-16, qrSize+32, qrSize+32, 32, true, false);
+      ctx.restore();
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+      // caption dưới QR
+      ctx.fillStyle = '#111';
+      ctx.font = '15px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Quét mã để xem', qrX + qrSize/2, qrY + qrSize + 38);
+      downloadBtn.disabled = false;
+    };
+    qrImg.src = qrDataUrl;
+  }
+
+  // QR code bên phải, căn giữa theo chiều dọc card
+  const qrSize = 320;
+  const qrX = canvas.width - qrSize - 120;
+  const qrY = boxY + (boxH - qrSize)/2;
+  const qrImg = new Image();
+  qrImg.onload = () => {
+    // nền trắng, bo góc, bóng nhẹ cho QR
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.13)';
+    ctx.shadowBlur = 16;
+    roundRect(ctx, qrX-16, qrY-16, qrSize+32, qrSize+32, 32, true, false);
+    ctx.restore();
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+    // caption dưới QR
+    ctx.fillStyle = '#111';
+    ctx.font = '15px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Quét mã để xem', qrX + qrSize/2, qrY + qrSize + 38);
     downloadBtn.disabled = false;
   };
-  img.src = qrDataUrl;
+  qrImg.src = qrDataUrl;
 }
 
 function roundRect(ctx, x, y, w, h, r, fill, stroke) {
@@ -128,9 +193,10 @@ async function generate() {
   }
   let data = t;
   if (mode.value === 'url') {
-    // if doesn't look like URL, add https://
+    // Yêu cầu nhập đúng URL, không tự động thêm https:// nếu không hợp lệ
     if (!/^https?:\/\//i.test(data)) {
-      data = 'https://' + data;
+      alert('Vui lòng nhập đúng định dạng URL (bắt đầu bằng http:// hoặc https://)');
+      return;
     }
   }
 
@@ -163,29 +229,22 @@ generateBtn.addEventListener('click', () => {
 
 generateGreetingBtn.addEventListener('click', () => {
   downloadBtn.disabled = true;
-  // Decide which URL to use based on greetingTarget
-  let landingUrl = 'https://vietxuan2208.github.io/qr_20-10/landing.html';
-  const target = greetingTargetSelect.value;
-  if (target === 'greeting') landingUrl = 'https://vietxuan2208.github.io/qr_20-10/greeting.html';
-  if (target === 'card') landingUrl = 'https://vietxuan2208.github.io/qr_20-10/card.html';
-  if (target === 'custom') {
-    const c = customTargetInput.value.trim();
-    if (c) landingUrl = c;
-  }
+  // Luôn dùng link greeting.html
+  const greetingUrl = 'https://vietxuan2208.github.io/qr_20-10/greeting.html';
   if (typeof QRCode === 'undefined' || !QRCode.toDataURL) {
     qrStatus.textContent = 'QR library chưa nạp. Vui lòng kiểm tra mạng hoặc mở file qua HTTP.';
     alert('QR library chưa nạp (QRCode undefined) — kiểm tra kết nối CDN hoặc mở console để biết thêm.');
     return;
   }
-  QRCode.toDataURL(landingUrl, {width:512, margin:1}).then(qrDataUrl => {
+  QRCode.toDataURL(greetingUrl, {width:512, margin:1}).then(qrDataUrl => {
     drawCard('Quét mã để mở thiệp 20/10', qrDataUrl, template.value);
     qrStatus.textContent = '';
-    qrPayloadEl.textContent = landingUrl;
+    qrPayloadEl.textContent = greetingUrl;
     openPayloadBtn.disabled = false;
-    openPayloadBtn.onclick = () => window.open(landingUrl, '_blank');
+    openPayloadBtn.onclick = () => window.open(greetingUrl, '_blank');
     // remember last QR
     lastQrDataUrl = qrDataUrl;
-    lastQrPayload = landingUrl;
+    lastQrPayload = greetingUrl;
   }).catch(err => {console.error(err); alert('Không thể tạo QR: '+err)});
 });
 
