@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mẫu QR chúc 20/10</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Trình tạo QR chúc 20/10</h1>
+    <p>Nhập liên kết hoặc thông điệp để đóng gói vào QR (ví dụ: lời chúc, trang web, ảnh). Trang này sẽ tạo một ảnh QR trong khung thiệp và cho phép tải về.</p>
+
+    <div class="controls">
+      <label>Loại nội dung:
+        <select id="mode">
+          <option value="text">Tin nhắn văn bản</option>
+          <option value="url">URL (đường dẫn)</option>
+        </select>
+      </label>
+
+      <label>Nội dung:
+        <textarea id="input" rows="3" placeholder="Nhập lời chúc 20/10 hoặc paste URL ở đây">Chúc mừng ngày Phụ nữ Việt Nam 20/10! Chúc bạn luôn xinh tươi, hạnh phúc và nhiều niềm vui.</textarea>
+      </label>
+
+      <label>Chọn mẫu thiệp:
+        <select id="template">
+          <option value="pink">Hồng</option>
+          <option value="purple">Tím</option>
+          <option value="classic">Cổ điển</option>
+        </select>
+      </label>
+
+    <div class="buttons">
+      <button id="generate">Tạo QR</button>
+          <button id="generateGreeting">Tạo QR — Trang mẫu đẹp</button>
+          <button id="download" disabled>Tải ảnh</button>
+        <button id="downloadQR" disabled>Tải QR (ảnh riêng)</button>
+      </div>
+      <label style="margin-top:8px">Kích thước ảnh QR khi tải:
+        <select id="qrSize">
+          <option value="512">512 px</option>
+          <option value="1024">1024 px</option>
+          <option value="2048">2048 px</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="preview">
+      <canvas id="canvas" width="800" height="800"></canvas>
+    </div>
+
+    <footer>
+      <small>Ngày 20/10 - Tạo thiệp QR nhanh</small>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
